@@ -1,21 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { CartRepository } from './cart.repository';
 
 @Injectable()
 export class CartService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private cartRepository: CartRepository) {}
 
   async getCart(userId: number) {
-    let cart = await this.prisma.cart.findUnique({
-      where: { userId },
-      include: { items: { include: { product: true } } },
-    });
+    let cart = await this.cartRepository.getCart(userId);
 
     if (!cart) {
-      cart = await this.prisma.cart.create({
-        data: { userId },
-        include: { items: { include: { product: true } } },
-      });
+      cart = await this.cartRepository.createCart(userId);
     }
 
     return cart;
@@ -24,22 +18,23 @@ export class CartService {
   async addToCart(userId: number, productId: number, quantity: number) {
     const cart = await this.getCart(userId);
 
+    // Optimization: Use repository to find item directly if possible, or use the loaded cart.
+    // Since we already loaded the cart with items in getCart, we can check there first.
+    // However, for consistency with the repository pattern and potentially cleaner logic:
     const existingItem = cart.items.find(
       (item) => item.productId === productId,
     );
 
     if (existingItem) {
-      return this.prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
-      });
+      return this.cartRepository.updateCartItemQuantity(
+        existingItem.id,
+        existingItem.quantity + quantity,
+      );
     } else {
-      return this.prisma.cartItem.create({
-        data: {
-          cartId: cart.id,
-          productId,
-          quantity,
-        },
+      return this.cartRepository.createCartItem({
+        cartId: cart.id,
+        productId,
+        quantity,
       });
     }
   }
@@ -52,8 +47,6 @@ export class CartService {
       throw new NotFoundException('Item not found in cart');
     }
 
-    return this.prisma.cartItem.delete({
-      where: { id: cartItemId },
-    });
+    return this.cartRepository.deleteCartItem(cartItemId);
   }
 }
