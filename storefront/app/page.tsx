@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Navbar } from '../src/components/Navbar';
 import { ProductCard } from '../src/components/ProductCard';
 import { ProductDetail } from '../src/components/ProductDetail';
 import { CartDrawer } from '../src/components/CartDrawer';
 import { CheckoutModal } from '../src/components/CheckoutModal';
-import { PRODUCTS, CATEGORIES, Product } from '../src/lib/data/products';
+import { CATEGORIES, Product } from '../src/lib/data/products';
+import { fetchProducts } from '../src/lib/api';
 import { SlidersHorizontal, ArrowUpDown, RefreshCw, Star, HelpCircle } from 'lucide-react';
 
 export default function Home() {
   // State definitions
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadError, setLoadError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
@@ -18,9 +21,18 @@ export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
+  // Load the catalog from the backend API
+  useEffect(() => {
+    fetchProducts()
+      .then(setProducts)
+      .catch((err: Error) =>
+        setLoadError(`Could not load products: ${err.message}`),
+      );
+  }, []);
+
   // Client-side filtering and sorting logic
   const filteredProducts = useMemo(() => {
-    let result = [...PRODUCTS];
+    let result = [...products];
 
     // 1. Search Query filter
     if (searchQuery.trim()) {
@@ -49,7 +61,7 @@ export default function Home() {
     } // 'featured' keeps original database order
 
     return result;
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [products, searchQuery, selectedCategory, sortBy]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -149,9 +161,12 @@ export default function Home() {
           {filteredProducts.length === 0 ? (
             <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-300 p-12 text-center dark:border-zinc-800">
               <HelpCircle size={32} className="text-zinc-400 mb-4" />
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">No items found</h3>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                {loadError ? 'Something went wrong' : 'No items found'}
+              </h3>
               <p className="mt-1.5 text-xs text-zinc-500 max-w-xs">
-                Your search query or category filter returned no results. Try modifying your filters or search terms.
+                {loadError ||
+                  'Your search query or category filter returned no results. Try modifying your filters or search terms.'}
               </p>
               <button
                 onClick={handleResetFilters}
