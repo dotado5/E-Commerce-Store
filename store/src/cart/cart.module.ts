@@ -6,5 +6,6 @@ import { CartRepository } from './cart.repository';
 @Module({
   controllers: [CartController],
   providers: [CartService, CartRepository],
+  exports: [CartRepository],
 })
 export class CartModule {}
