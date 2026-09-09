@@ -126,6 +126,13 @@ both ECS services, waiting for stability.
 > Prerequisites: an AWS account, AWS CLI v2 configured (`aws configure`),
 > and a region choice (examples use `us-east-1` — replace throughout).
 > Everything below is also doable in the AWS Console if you prefer.
+>
+> **Windows / PowerShell note:** inline JSON arguments (bash-style
+> `'{"Version": ...}'`) get their quotes mangled by PowerShell before the
+> AWS CLI sees them, producing `Unknown options` errors. That's why every
+> policy document below is passed as a **file** from
+> [deploy/iam/](../deploy/iam/) via `file://` — run these commands from
+> the repository root so the relative paths resolve.
 
 ### 8. Create ECR repositories
 
@@ -234,24 +241,14 @@ images, write logs, and read the secrets:
 
 ```bash
 aws iam create-role --role-name ecommerceTaskExecutionRole \
-  --assume-role-policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [{"Effect": "Allow",
-      "Principal": {"Service": "ecs-tasks.amazonaws.com"},
-      "Action": "sts:AssumeRole"}]}'
+  --assume-role-policy-document file://deploy/iam/ecs-tasks-trust-policy.json
 
 aws iam attach-role-policy --role-name ecommerceTaskExecutionRole \
   --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 aws iam put-role-policy --role-name ecommerceTaskExecutionRole \
   --policy-name ReadEcommerceSecrets \
-  --policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-      {"Effect": "Allow", "Action": "secretsmanager:GetSecretValue",
-       "Resource": "arn:aws:secretsmanager:*:*:secret:ecommerce/*"},
-      {"Effect": "Allow", "Action": ["logs:CreateLogGroup"],
-       "Resource": "*"}]}'
+  --policy-document file://deploy/iam/task-execution-secrets-policy.json
 ```
 
 **b) GitHub OIDC deploy role** — lets the workflow deploy without stored
@@ -263,21 +260,14 @@ aws iam create-open-id-connect-provider \
   --client-id-list sts.amazonaws.com
 ```
 
-Then the role — **replace `<GITHUB_ORG>/<REPO>`** with this repository
-(e.g. `dotado5/E-Commerce-Store`):
+Then the role. First edit
+[deploy/iam/github-oidc-trust-policy.json](../deploy/iam/github-oidc-trust-policy.json)
+and replace `<AWS_ACCOUNT_ID>` and `<GITHUB_ORG>/<REPO>` (e.g.
+`dotado5/E-Commerce-Store`), then:
 
 ```bash
 aws iam create-role --role-name ecommerceGithubDeployRole \
-  --assume-role-policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Effect": "Allow",
-      "Principal": {"Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"},
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
-        "StringLike": {"token.actions.githubusercontent.com:sub": "repo:<GITHUB_ORG>/<REPO>:*"}
-      }}]}'
+  --assume-role-policy-document file://deploy/iam/github-oidc-trust-policy.json
 ```
 
 Attach permissions (ECR push, ECS deploy, pass the execution role):
@@ -285,22 +275,7 @@ Attach permissions (ECR push, ECS deploy, pass the execution role):
 ```bash
 aws iam put-role-policy --role-name ecommerceGithubDeployRole \
   --policy-name DeployEcommerce \
-  --policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-      {"Effect": "Allow", "Action": ["ecr:GetAuthorizationToken"], "Resource": "*"},
-      {"Effect": "Allow", "Action": [
-        "ecr:BatchCheckLayerAvailability", "ecr:PutImage",
-        "ecr:InitiateLayerUpload", "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload", "ecr:BatchGetImage",
-        "ecr:GetDownloadUrlForLayer"],
-       "Resource": "arn:aws:ecr:*:*:repository/ecommerce-*"},
-      {"Effect": "Allow", "Action": [
-        "ecs:RegisterTaskDefinition", "ecs:DescribeTaskDefinition",
-        "ecs:DescribeServices", "ecs:UpdateService"],
-       "Resource": "*"},
-      {"Effect": "Allow", "Action": "iam:PassRole",
-       "Resource": "arn:aws:iam::*:role/ecommerceTaskExecutionRole"}]}'
+  --policy-document file://deploy/iam/github-deploy-policy.json
 ```
 
 ### 14. ECS cluster + Cloud Map namespace
@@ -438,7 +413,7 @@ Run the seed as a one-off task with the same task definition:
 aws ecs run-task --cluster ecommerce --launch-type FARGATE \
   --task-definition ecommerce-store \
   --network-configuration 'awsvpcConfiguration={subnets=[<SUBNET_A>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}' \
-  --overrides '{"containerOverrides":[{"name":"store","command":["sh","-c","npm run seed"]}]}'
+  --overrides file://deploy/ecs/overrides-seed.json
 ```
 
 (Note: seeding needs dev dependencies; if the production image lacks
@@ -456,7 +431,7 @@ Before setting `desired-count > 1` on `ecommerce-store`:
 aws ecs run-task --cluster ecommerce --launch-type FARGATE \
   --task-definition ecommerce-store \
   --network-configuration 'awsvpcConfiguration={subnets=[<SUBNET_A>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}' \
-  --overrides '{"containerOverrides":[{"name":"store","command":["npx","prisma","migrate","deploy"]}]}'
+  --overrides file://deploy/ecs/overrides-migrate.json
 ```
 
 ### Cost note

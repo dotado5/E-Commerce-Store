@@ -1,0 +1,8 @@
+{
+  "containerOverrides": [
+    {
+      "name": "store",
+      "command": ["npx", "prisma", "migrate", "deploy"]
+    }
+  ]
+}
