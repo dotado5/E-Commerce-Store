@@ -18,26 +18,26 @@
       ],
       "environment": [
         { "name": "PORT", "value": "5000" },
-        { "name": "REDIS_URL", "value": "redis://<ELASTICACHE_ENDPOINT>:6379" },
-        { "name": "STRIPE_PUBLISHABLE_KEY", "value": "<STRIPE_PUBLISHABLE_KEY>" },
+        { "name": "REDIS_URL", "value": "redis://redis://ecommerce-redis.c5tedm.0001.use1.cache.amazonaws.com:6379" },
+        { "name": "STRIPE_PUBLISHABLE_KEY", "value": "pk_test_51P4oDKP8DO5mu78ZJCzyGQwj3zxbiRBZtfXbuyNHVI5vIBpNVK53h3MIMfZDWQ6NEl54XThOxa76aS8aUjSRFHiC00Z7dlxOdp" },
         { "name": "SKIP_MIGRATIONS", "value": "false" }
       ],
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/database-url"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/database-url"
         },
         {
           "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/jwt-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/jwt-secret"
         },
         {
           "name": "STRIPE_SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/stripe-secret-key"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/stripe-secret-key"
         },
         {
           "name": "STRIPE_WEBHOOK_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/stripe-webhook-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753>:secret:ecommerce/stripe-webhook-secret"
         }
       ],
       "healthCheck": {
@@ -51,7 +51,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/ecommerce-store",
-          "awslogs-region": "<AWS_REGION>",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "store",
           "awslogs-create-group": "true"
         }
