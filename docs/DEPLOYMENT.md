@@ -127,12 +127,15 @@ both ECS services, waiting for stability.
 > and a region choice (examples use `us-east-1` — replace throughout).
 > Everything below is also doable in the AWS Console if you prefer.
 >
-> **Windows / PowerShell note:** inline JSON arguments (bash-style
-> `'{"Version": ...}'`) get their quotes mangled by PowerShell before the
-> AWS CLI sees them, producing `Unknown options` errors. That's why every
-> policy document below is passed as a **file** from
-> [deploy/iam/](../deploy/iam/) via `file://` — run these commands from
-> the repository root so the relative paths resolve.
+> **Windows / PowerShell note:** bash-style single-quoted arguments don't
+> survive Windows shells — inline JSON gets its quotes mangled (producing
+> `Unknown options` errors) and single-quoted shorthand arrives with a
+> literal `'` (producing `Error parsing parameter ... received: '''`).
+> Therefore every policy document below is passed as a **file** from
+> [deploy/iam/](../deploy/iam/) via `file://` (run the commands from the
+> repository root so relative paths resolve), and all shorthand arguments
+> (`--dns-config`, `--network-configuration`, …) use **double quotes**,
+> which work in PowerShell, cmd, and bash alike.
 
 ### 8. Create ECR repositories
 
@@ -294,7 +297,7 @@ When the namespace is ready, create a discovery service for the backend
 ```bash
 aws servicediscovery create-service --name store \
   --namespace-id <NAMESPACE_ID> \
-  --dns-config 'NamespaceId=<NAMESPACE_ID>,DnsRecords=[{Type=A,TTL=10}]' \
+  --dns-config "NamespaceId=<NAMESPACE_ID>,DnsRecords=[{Type=A,TTL=10}]" \
   --health-check-custom-config FailureThreshold=1
 ```
 
@@ -314,7 +317,7 @@ aws elbv2 create-target-group --name ecommerce-storefront-tg \
 
 aws elbv2 create-listener --load-balancer-arn <ALB_ARN> \
   --protocol HTTP --port 80 \
-  --default-actions Type=forward,TargetGroupArn=<TG_ARN>
+  --default-actions "Type=forward,TargetGroupArn=<TG_ARN>"
 ```
 
 For HTTPS (recommended before going live): request a certificate in ACM
@@ -346,15 +349,15 @@ aws ecs register-task-definition --cli-input-json file://deploy/ecs/taskdef-stor
 aws ecs create-service --cluster ecommerce --service-name ecommerce-store \
   --task-definition ecommerce-store --desired-count 1 \
   --launch-type FARGATE \
-  --network-configuration 'awsvpcConfiguration={subnets=[<SUBNET_A>,<SUBNET_B>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}' \
-  --service-registries 'registryArn=<CLOUDMAP_SERVICE_ARN>'
+  --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_A>,<SUBNET_B>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}" \
+  --service-registries "registryArn=<CLOUDMAP_SERVICE_ARN>"
 
 # Storefront: behind the ALB
 aws ecs create-service --cluster ecommerce --service-name ecommerce-storefront \
   --task-definition ecommerce-storefront --desired-count 1 \
   --launch-type FARGATE \
-  --network-configuration 'awsvpcConfiguration={subnets=[<SUBNET_A>,<SUBNET_B>],securityGroups=[<STOREFRONT_SG>],assignPublicIp=ENABLED}' \
-  --load-balancers 'targetGroupArn=<TG_ARN>,containerName=storefront,containerPort=3000'
+  --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_A>,<SUBNET_B>],securityGroups=[<STOREFRONT_SG>],assignPublicIp=ENABLED}" \
+  --load-balancers "targetGroupArn=<TG_ARN>,containerName=storefront,containerPort=3000"
 ```
 
 > `assignPublicIp=ENABLED` is the simple default-VPC way to give tasks
@@ -412,7 +415,7 @@ Run the seed as a one-off task with the same task definition:
 ```bash
 aws ecs run-task --cluster ecommerce --launch-type FARGATE \
   --task-definition ecommerce-store \
-  --network-configuration 'awsvpcConfiguration={subnets=[<SUBNET_A>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}' \
+  --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_A>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}" \
   --overrides file://deploy/ecs/overrides-seed.json
 ```
 
@@ -430,7 +433,7 @@ Before setting `desired-count > 1` on `ecommerce-store`:
 ```bash
 aws ecs run-task --cluster ecommerce --launch-type FARGATE \
   --task-definition ecommerce-store \
-  --network-configuration 'awsvpcConfiguration={subnets=[<SUBNET_A>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}' \
+  --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_A>],securityGroups=[<STORE_SG>],assignPublicIp=ENABLED}" \
   --overrides file://deploy/ecs/overrides-migrate.json
 ```
 
