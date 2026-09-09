@@ -1,0 +1,61 @@
+{
+  "family": "ecommerce-store",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecommerceTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "store",
+      "image": "<IMAGE>",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "5000" },
+        { "name": "REDIS_URL", "value": "redis://<ELASTICACHE_ENDPOINT>:6379" },
+        { "name": "STRIPE_PUBLISHABLE_KEY", "value": "<STRIPE_PUBLISHABLE_KEY>" },
+        { "name": "SKIP_MIGRATIONS", "value": "false" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/database-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/jwt-secret"
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/stripe-secret-key"
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:ecommerce/stripe-webhook-secret"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ecommerce-store",
+          "awslogs-region": "<AWS_REGION>",
+          "awslogs-stream-prefix": "store",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}
