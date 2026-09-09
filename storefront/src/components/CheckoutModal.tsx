@@ -2,21 +2,28 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, CheckCircle, Lock, Sparkles, Loader2, LogIn, AlertCircle } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useCart } from '../lib/context/CartContext';
 import {
   ApiOrder,
   checkout,
+  fetchStripePk,
   getToken,
   getUserEmail,
   refreshPayment,
   signIn,
 } from '../lib/api';
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PK
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK)
-  : null;
+// The publishable key comes from the backend at runtime
+// (GET /payments/config), so nothing is baked into this bundle.
+let stripePromise: Promise<Stripe | null> | null = null;
+async function getStripe(): Promise<Stripe | null> {
+  const pk = await fetchStripePk();
+  if (!pk) return null;
+  stripePromise ??= loadStripe(pk);
+  return stripePromise;
+}
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -32,6 +39,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   const { cartTotal, cartItems, clearCart } = useCart();
   const [step, setStep] = useState<CheckoutStep>('auth');
   const [order, setOrder] = useState<ApiOrder | null>(null);
+  const [stripeClient, setStripeClient] = useState<Stripe | null>(null);
   const [error, setError] = useState('');
 
   const [email, setEmail] = useState('');
@@ -64,7 +72,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       );
       setOrder(created);
 
-      if (created.payment?.clientSecret && stripePromise) {
+      const stripe = created.payment?.clientSecret ? await getStripe() : null;
+      if (created.payment?.clientSecret && stripe) {
+        setStripeClient(stripe);
         setStep('pay');
       } else {
         // Payments disabled server-side — order stands as unpaid.
@@ -217,7 +227,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
           )}
 
           {/* Step 3: Stripe payment */}
-          {step === 'pay' && order?.payment?.clientSecret && stripePromise && (
+          {step === 'pay' && order?.payment?.clientSecret && stripeClient && (
             <div className="space-y-4">
               <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900">
                 <div className="flex justify-between text-sm font-semibold text-zinc-900 dark:text-zinc-300">
@@ -226,7 +236,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
                 </div>
               </div>
               <Elements
-                stripe={stripePromise}
+                stripe={stripeClient}
                 options={{ clientSecret: order.payment.clientSecret }}
               >
                 <StripePaymentForm onPaid={handlePaid} onError={setError} />

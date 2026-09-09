@@ -45,4 +45,6 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Set SKIP_MIGRATIONS=true when running more than one instance and apply
+# migrations as a separate one-off task instead (see docs/DEPLOYMENT.md).
+CMD ["sh", "-c", "if [ \"$SKIP_MIGRATIONS\" = \"true\" ]; then echo 'Skipping migrations'; else npx prisma migrate deploy; fi && node dist/main.js"]

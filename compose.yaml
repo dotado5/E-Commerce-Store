@@ -13,6 +13,7 @@ services:
       PORT: 5000
       # Set these in a root .env (or the shell) to enable Stripe test payments.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     ports:
       - '5000:5000'
@@ -41,9 +42,8 @@ services:
       context: ./storefront
       target: development
     environment:
-      # Used by next.config.ts rewrites to proxy /api/* to the backend.
+      # Read at request time by the /api proxy route.
       API_URL: http://store:5000
-      NEXT_STRIPE_PK: ${NEXT_STRIPE_PK:-}
     ports:
       - '3000:3000'
     depends_on:

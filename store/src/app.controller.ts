@@ -9,4 +9,10 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  // Liveness probe for load balancers / ECS container health checks.
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', uptime: process.uptime() };
+  }
 }

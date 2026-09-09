@@ -13,17 +13,12 @@ EXPOSE 3000
 
 CMD ["npm", "run", "dev"]
 
-# Stage 1: Build the Next.js standalone server.
-# API_URL is baked into the server at build time (used by the /api rewrite);
-# NEXT_STRIPE_PK is baked into the client bundle.
+# Stage 1: Build the Next.js standalone server. Nothing environment-
+# specific is baked in: the /api proxy route reads API_URL at request
+# time and the Stripe publishable key is served by the backend.
 FROM node:22-alpine AS build
 
 WORKDIR /app
-
-ARG API_URL=http://store:5000
-ARG NEXT_STRIPE_PK=""
-ENV API_URL=$API_URL
-ENV NEXT_STRIPE_PK=$NEXT_STRIPE_PK
 
 COPY package*.json ./
 RUN npm ci

@@ -85,6 +85,20 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
+let stripePkPromise: Promise<string | null> | null = null;
+
+/** Fetches the Stripe publishable key from the backend (cached). */
+export function fetchStripePk(): Promise<string | null> {
+  if (!stripePkPromise) {
+    stripePkPromise = request<{ publishableKey: string | null }>(
+      "/payments/config",
+    )
+      .then((config) => config.publishableKey)
+      .catch(() => null);
+  }
+  return stripePkPromise;
+}
+
 export async function signIn(email: string, password: string): Promise<void> {
   const { access_token } = await request<{ access_token: string }>(
     "/auth/signin",
