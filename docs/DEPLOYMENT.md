@@ -242,6 +242,15 @@ aws secretsmanager create-secret --name ecommerce/stripe-webhook-secret \
   --secret-string 'whsec_placeholder'    # updated in step 19
 ```
 
+**Important:** Secrets Manager appends a random suffix to each ARN
+(e.g. `...secret:ecommerce/jwt-secret-OngVms`). The task definitions must
+reference the **full suffixed ARNs** — a full-looking ARN without the
+suffix fails at task start with `ResourceNotFoundException`. List them:
+
+```bash
+aws secretsmanager list-secrets --query "SecretList[].{Name:Name,ARN:ARN}" --output table
+```
+
 ### 13. IAM roles
 
 **a) Task execution role** (`ecommerceTaskExecutionRole`) — lets ECS pull

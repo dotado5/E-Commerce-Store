@@ -25,19 +25,19 @@
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/database-url"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/database-url-tw4ldn"
         },
         {
           "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/jwt-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/jwt-secret-OngVms"
         },
         {
           "name": "STRIPE_SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/stripe-secret-key"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/stripe-secret-key-6IWjUN"
         },
         {
           "name": "STRIPE_WEBHOOK_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/stripe-webhook-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/stripe-webhook-secret-tjqL7c"
         }
       ],
       "healthCheck": {

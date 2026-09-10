@@ -32,6 +32,10 @@ FROM node:22-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
+# Next standalone binds to $HOSTNAME if set; ECS/Fargate sets it to the
+# task hostname, which breaks localhost health checks. Pin the bind
+# address so the server listens on all interfaces.
+ENV HOSTNAME=0.0.0.0
 
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
