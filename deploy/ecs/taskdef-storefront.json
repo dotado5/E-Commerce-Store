@@ -8,7 +8,7 @@
   "containerDefinitions": [
     {
       "name": "storefront",
-      "image": "<IMAGE>",
+      "image": "900930545753.dkr.ecr.us-east-1.amazonaws.com/ecommerce-storefront:latest",
       "essential": true,
       "portMappings": [
         {
@@ -31,7 +31,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/ecommerce-storefront",
-          "awslogs-region": "900930545753",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "storefront",
           "awslogs-create-group": "true"
         }

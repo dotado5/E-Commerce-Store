@@ -8,7 +8,7 @@
   "containerDefinitions": [
     {
       "name": "store",
-      "image": "<IMAGE>",
+      "image": "900930545753.dkr.ecr.us-east-1.amazonaws.com/ecommerce-store:latest",
       "essential": true,
       "portMappings": [
         {
@@ -18,7 +18,7 @@
       ],
       "environment": [
         { "name": "PORT", "value": "5000" },
-        { "name": "REDIS_URL", "value": "redis://redis://ecommerce-redis.c5tedm.0001.use1.cache.amazonaws.com:6379" },
+        { "name": "REDIS_URL", "value": "redis://ecommerce-redis.c5tedm.0001.use1.cache.amazonaws.com:6379" },
         { "name": "STRIPE_PUBLISHABLE_KEY", "value": "pk_test_51P4oDKP8DO5mu78ZJCzyGQwj3zxbiRBZtfXbuyNHVI5vIBpNVK53h3MIMfZDWQ6NEl54XThOxa76aS8aUjSRFHiC00Z7dlxOdp" },
         { "name": "SKIP_MIGRATIONS", "value": "false" }
       ],
@@ -37,7 +37,7 @@
         },
         {
           "name": "STRIPE_WEBHOOK_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753>:secret:ecommerce/stripe-webhook-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:900930545753:secret:ecommerce/stripe-webhook-secret"
         }
       ],
       "healthCheck": {
