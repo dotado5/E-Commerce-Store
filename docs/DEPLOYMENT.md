@@ -136,6 +136,11 @@ both ECS services, waiting for stability.
 > repository root so relative paths resolve), and all shorthand arguments
 > (`--dns-config`, `--network-configuration`, …) use **double quotes**,
 > which work in PowerShell, cmd, and bash alike.
+>
+> One more: run the ECR login pipeline (step 17a) from **cmd**, not
+> PowerShell — PowerShell re-encodes piped output and corrupts the token,
+> making `docker login` fail with `400 Bad Request`. In PowerShell, wrap
+> it: `cmd /c "aws ecr get-login-password ... | docker login ..."`.
 
 ### 8. Create ECR repositories
 
