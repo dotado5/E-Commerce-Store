@@ -330,7 +330,12 @@ Edit both files in [deploy/ecs/](../deploy/ecs/) and replace:
 - `<AWS_ACCOUNT_ID>` and `<AWS_REGION>` — your account/region.
 - `<ELASTICACHE_ENDPOINT>` — from step 11.
 - `<STRIPE_PUBLISHABLE_KEY>` — your `pk_test_`/`pk_live_` key (not secret).
-- Leave `<IMAGE>` alone — CI replaces it on every deploy.
+- `<IMAGE>` — your ECR URI with the `latest` tag, e.g.
+  `<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/ecommerce-store:latest`
+  (and `.../ecommerce-storefront:latest` in the other file). A registration
+  fails on the raw `<IMAGE>` placeholder; CI overwrites this value with a
+  SHA-tagged image on every deploy, so it only matters for the first
+  manual registration in step 17.
 - In `taskdef-storefront.json`, `API_URL` already matches the Cloud Map
   name from step 14; change it only if you used different names.
 
@@ -338,8 +343,21 @@ Commit and push the filled-in files.
 
 ### 17. First deploy
 
-Register the task definitions and create the two services (afterwards, CI
-handles every update):
+**a) Push the images once by hand** — the services can't start (and the
+`latest` tag doesn't exist) until something is in ECR. From the repo root:
+
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
+
+docker build --target production -t <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ecommerce-store:latest ./store
+docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ecommerce-store:latest
+
+docker build --target production -t <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ecommerce-storefront:latest ./storefront
+docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ecommerce-storefront:latest
+```
+
+**b) Register the task definitions and create the two services**
+(afterwards, CI handles every update):
 
 ```bash
 aws ecs register-task-definition --cli-input-json file://deploy/ecs/taskdef-store.json
