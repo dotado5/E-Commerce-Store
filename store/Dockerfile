@@ -37,7 +37,9 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Prisma schema + migrations are needed at runtime for generate/migrate deploy
+# Prisma schema, migrations, and config are needed at runtime for
+# generate/migrate deploy — prisma.config.ts carries the datasource URL.
+COPY prisma.config.ts ./
 COPY prisma ./prisma
 RUN npx prisma generate
 
